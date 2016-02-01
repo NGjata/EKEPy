@@ -18,7 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 # Hack in case the imports don't work outside of the PyCharm IDE
-import os, sys
+import os
+import sys
+
 parentPath = os.path.abspath("..")
 if parentPath not in sys.path:
     sys.path.insert(0, parentPath)
@@ -36,8 +38,11 @@ from Utilities.Encryption import *
 
 # Exchange of Diffie-Hellman keys
 # default passphrase is the one defined in the Constats.py
-def exchangeDHServ(socket, sharedPassphrase=PASSPHRASE):
-
+def exchangeDHServ(socket, sharedPassphrase=PASSPHRASE, serversIdentity=SERVER_IDENTITY):
+    if sharedPassphrase is None:
+        sharedPassphrase=PASSPHRASE
+    if serversIdentity is None:
+        serversIdentity=SERVER_IDENTITY
 
 
 
@@ -77,10 +82,15 @@ def exchangeDHServ(socket, sharedPassphrase=PASSPHRASE):
             print("-> Generator: ", clientGenerator)
             print("-> Group: ", clientGroup)
 
+        firstLetterOfClient = clientsIdentity[0].lower()
+        firstLetterOfServer = serversIdentity[0].lower()
+        TServer = 'T'+firstLetterOfServer
+        TClient = 'T'+firstLetterOfClient
+
         # we should decrypt the encrypted value
         if VERBOSE_MODE:
             print('\n')
-            print("Decrypting EncData (extracting Ta) ...")
+            print("Decrypting EncData (extracting {0:s}) ...".format(TClient))
 
         if MEASURE_TIME: start = time.clock()
         EncrObj = Encryption(sharedPassphrase)
@@ -90,7 +100,7 @@ def exchangeDHServ(socket, sharedPassphrase=PASSPHRASE):
         Ta = jsonpickle.decode(decryptedData.decode('utf-8'))
 
         if VERBOSE_MODE:
-            print("-> Ta: ", Ta)
+            print("-> {0:s}: {1:d}".format(TClient, Ta))
             print("{0:.5f} sec".format(end - start))
 
 
@@ -113,7 +123,7 @@ def exchangeDHServ(socket, sharedPassphrase=PASSPHRASE):
         Tb = dhObjServer.genPublicKey()
 
         if VERBOSE_MODE:
-            print("Calculated Tb: ", Tb)
+            print("Calculated {0:s}: {1:s}".format(TServer, str(Tb)))
             if MEASURE_TIME:
                 end = time.clock()
             print("{0:.5f} sec\n".format(end - start))
@@ -123,33 +133,33 @@ def exchangeDHServ(socket, sharedPassphrase=PASSPHRASE):
         serverRandomNumber = str(dhObjServer.genRandom(KEY_LENGTH))
 
         if VERBOSE_MODE:
-            print("Extracting ServerRandom: ", serverRandomNumber)
+            print("Extracting {0:s}Random: {1:s} ".format(serversIdentity, serverRandomNumber))
 
-        messageEnc = {'Tb': Tb, 'ServerRandom': serverRandomNumber}
+
+        messageEnc = {TServer: Tb, serversIdentity+'Random': serverRandomNumber}
 
         serialiseMess = jsonpickle.encode(messageEnc)
 
         if VERBOSE_MODE:
             print('\n')
-            print("Encrypting EncData={Tb,ServerRandom}")
+            print("Encrypting EncData={{{0:s},{0:s}Random}}".format(TServer, serversIdentity))
 
         if MEASURE_TIME: start = time.clock()
         encryptedMess = EncrObj.encrypt(serialiseMess)
         if MEASURE_TIME: end = time.clock()
 
-        sendMessage = {'Identity': 'Server', 'EncData': encryptedMess}
+        sendMessage = {'Identity': serversIdentity, 'EncData': encryptedMess}
         if VERBOSE_MODE:
             print("-> EncData: ", encryptedMess)
             if MEASURE_TIME:
                 print("{0:.5f} sec\n".format(end - start))
 
-        serialiseSendMessage = sendMessage
 
         if VERBOSE_MODE:
             print('\n')
-            print("Send packet to the client: ", serialiseSendMessage)
+            print("Send packet to {0:s}: {1:s}".format(clientsIdentity, jsonpickle.encode(sendMessage)))
 
-        MessageUtils.send_one_message(socket, serialiseSendMessage)
+        MessageUtils.send_one_message(socket, sendMessage)
 
         if VERBOSE_MODE:
             print("Packet sent! ")
@@ -171,14 +181,14 @@ def exchangeDHServ(socket, sharedPassphrase=PASSPHRASE):
         if MEASURE_TIME: end = time.clock()
 
         decodeMessage = jsonpickle.decode(decryptMessage.decode('utf-8'))
-        receivedRandom = decodeMessage['ServerRandom']
-        getClientRandom = decodeMessage['ClientRandom']
+        receivedRandom = decodeMessage[serversIdentity+'Random']
+        getClientRandom = decodeMessage[clientsIdentity+'Random']
 
         if VERBOSE_MODE:
             print("\n")
             print("Decrypted packet: ")
-            print("-> ServerRandom (c1): ", receivedRandom)
-            print("-> ClientRandom (c2): ", getClientRandom)
+            print("-> {0:s}Random (c1): {1:s} ".format(serversIdentity,receivedRandom))
+            print("-> {0:s}Random (c2): {1:s}".format(clientsIdentity,getClientRandom))
             print("{0:.5f} sec\n".format(end - start))
             print("\n")
 
@@ -188,7 +198,7 @@ def exchangeDHServ(socket, sharedPassphrase=PASSPHRASE):
                 print("Sent random: ", serverRandomNumber)
                 print("Rec. random: ", receivedRandom)
                 print("The randoms correspond!")
-                print("Encrypting and sending the client's random Ek(C2)... ")
+                print("Encrypting and sending the {0:s} random Ek(C2)... ".format(clientsIdentity))
 
             if MEASURE_TIME: start = time.clock()
             encryptClientRandom = newEncryption.encrypt(getClientRandom)
