@@ -16,19 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# Hack in case the imports don't work outside of the PyCharm IDE
-import os
-import sys
-
-parentPath = os.path.abspath("..")
-if parentPath not in sys.path:
-    sys.path.insert(0, parentPath)
-    sys.path.insert(0, parentPath+'/Client/')
-    sys.path.insert(0, parentPath+'/Utilities/')
-
-# ****************************************
-
 from socket import *
+
 from Client import ExchangeDHCli
 from Utilities import MessageUtils
 from Utilities.Constants import *
@@ -52,7 +41,9 @@ while True:
     # make the key exchange
     # we can use it with a new passphrase if we don't want to use the PASSPHRASE defined in the Constants.py
     # * the value in the Constants.py can be changed if we don't want to put a passphrase as a parameter!
-    # session_key = ExchangeDHCli.exchangeDHCli(tcpSocket, "SHARED_PASS", "CLIENT_NAME") # with a new passphrase!
+    # session_key = ExchangeDHCli.exchangeDHCli(tcpSocket, "HELLOWORLD") # with a new passphrase!
+
+
     session_key = ExchangeDHCli.exchangeDHCli(tcpSocket)
 
     # this is all that's needed to derive the key!
@@ -73,13 +64,14 @@ while True:
 
         while True:
             mess = input("Type a message: ")
-            MessageUtils.send_encrypted_message(tcpSocket, mess, session_key)
-            response = MessageUtils.receive_encrypted_message(tcpSocket, session_key)
-            if response == 'quit':
+            if mess == 'quit':
                 print("\'quit\' detected, closing connection ... ")
+                MessageUtils.send_encrypted_message(tcpSocket, mess, session_key)
                 tcpSocket.close()
                 break
             else:
+                MessageUtils.send_encrypted_message(tcpSocket, mess, session_key)
+                response = MessageUtils.receive_encrypted_message(tcpSocket, session_key)
                 print("Server: ", response)
 
     break

@@ -3,7 +3,7 @@
 ''' some of these settings should be the same on the client and server! '''
 
 HOST = "127.0.0.1"  # the host we are connecting to
-PORT = 21443  # port
+PORT = 21442  # port
 BUFSIZ = 1024  # size of socket's buffer
 ADDR = (HOST, PORT)
 
@@ -18,18 +18,11 @@ VERBOSE_MODE = True
 '''Note that if VERBOSE_MODE is false
 MEASURE_GLOBAL_TIME and MEASURE_TIME won't
 have any effect on the output! '''
-MEASURE_GLOBAL_TIME = True  # print how much time does the all the DH algorithm take.
-MEASURE_TIME = True  # print how much time do the slowest algorithms take.
+MEASURE_GLOBAL_TIME = True  # how much time does the all the DH algorithm take.
+MEASURE_TIME = True  # how much time do the slowest algorithms take.
 
 # these settings are choosen only by the client, have no effect on the server!
 # -------------------------------------------------------------------------
-CLIENT_IDENTITY = "Client" # the ID the client sends
+
 GENERATOR = 2  # public generator
 GROUP = 17  # public group (the prime number)
-
-
-
-
-# these settings are choosen only by the server, have no effect on the client!
-# -------------------------------------------------------------------------
-SERVER_IDENTITY = "Server"  #the ID that the server sends

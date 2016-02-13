@@ -16,31 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# Hack in case the imports don't work outside of the PyCharm IDE
-import os
-import sys
-
-parentPath = os.path.abspath("..")
-if parentPath not in sys.path:
-    sys.path.insert(0, parentPath)
-    sys.path.insert(0, parentPath+'/Utilities/')
-
-# ****************************************
-
 import time
+
 import jsonpickle
+
 from Utilities import MessageUtils
 from Utilities.Constants import *
 from Utilities.DiffieHellman import *
 from Utilities.Encryption import *
 
 
-def exchangeDHCli(socket, sharedPassphrase=PASSPHRASE, clientsIdentity=CLIENT_IDENTITY):
-    if sharedPassphrase is None:
-        sharedPassphrase=PASSPHRASE
-    if clientsIdentity is None:
-        clientsIdentity=CLIENT_IDENTITY
-
+def exchangeDHCli(socket, sharedPassphrase=PASSPHRASE):
     if VERBOSE_MODE:
         globalTimeStart = time.clock()
         print("\n \n Starting DH key derivation algorithm...")
@@ -68,7 +54,7 @@ def exchangeDHCli(socket, sharedPassphrase=PASSPHRASE, clientsIdentity=CLIENT_ID
     encryptedA = EncrObj.encrypt(jsonpickle.encode(A))
     if MEASURE_TIME: end = time.clock()
 
-    message = {'Identity': clientsIdentity, 'EncData': encryptedA.decode('utf-8'), 'Generator': GENERATOR, 'Group': GROUP}
+    message = {'Identity': 'ClientA', 'EncData': encryptedA.decode('utf-8'), 'Generator': GENERATOR, 'Group': GROUP}
     serialisedParameters = jsonpickle.encode(message)
 
     if VERBOSE_MODE:
@@ -100,14 +86,8 @@ def exchangeDHCli(socket, sharedPassphrase=PASSPHRASE, clientsIdentity=CLIENT_ID
         serversIdentity = serversPubParams['Identity']
         serversEnc = serversPubParams['EncData']
 
-
-        firstLetterOfClient = clientsIdentity[0].lower()
-        firstLetterOfServer = serversIdentity[0].lower()
-        TServer = 'T'+firstLetterOfServer
-        TClient = 'T'+firstLetterOfClient
-
         if VERBOSE_MODE:
-            print("-> Identity: ", clientsIdentity)
+            print("-> Identity: ", serversIdentity)
             print("-> EncData: ", serversEnc)
             print('\n')
 
@@ -118,14 +98,13 @@ def exchangeDHCli(socket, sharedPassphrase=PASSPHRASE, clientsIdentity=CLIENT_ID
 
         if MEASURE_TIME: end = time.clock()
 
-        Tb = serversDecodedPar[TServer]
-        serverRandom = serversDecodedPar[serversIdentity+'Random']
-
+        Tb = serversDecodedPar['Tb']
+        serverRandom = serversDecodedPar['ServerRandom']
 
         if VERBOSE_MODE:
             print("Decrypted EncData: ")
-            print("-> {0:s}: {1:d}".format(TServer,Tb))
-            print("-> {0:s}Random: {1:s}".format(serversIdentity, serverRandom))
+            print("-> Tb: ", Tb)
+            print("-> ServerRandom: ", serverRandom)
             print("{0:.5f} sec".format(end - start))
 
         # generate the shared key
@@ -149,7 +128,7 @@ def exchangeDHCli(socket, sharedPassphrase=PASSPHRASE, clientsIdentity=CLIENT_ID
         if VERBOSE_MODE:
             print("Choosing random number...")
 
-        testMessage = {serversIdentity+'Random': serverRandom, clientsIdentity+'Random': clientRandomNumber}
+        testMessage = {"ServerRandom": serverRandom, "ClientRandom": clientRandomNumber}
 
         serializeTestMessage = jsonpickle.encode(testMessage)
 

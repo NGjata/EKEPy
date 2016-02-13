@@ -16,19 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# Hack in case the imports don't work outside of the PyCharm IDE
-import os
-import sys
-
-parentPath = os.path.abspath("..")
-if parentPath not in sys.path:
-    sys.path.insert(0, parentPath)
-    sys.path.insert(0, parentPath+'/Server/')
-    sys.path.insert(0, parentPath+'/Utilities/')
-
-# ****************************************
-
+# In case the imports don't work outside of this IDE
+''' import os, sys
+# parentPath = os.path.abspath("..")
+# if parentPath not in sys.path:
+    # sys.path.insert(0, parentPath)
+    # sys.path.insert(0, parentPath+'/Client/')'''
 from socket import *
+
 from Server import ExchangeDHServ
 from Utilities import MessageUtils
 from Utilities.Constants import *
@@ -49,7 +44,7 @@ while True:
             # when ExchangeDHServ finishes we will have a session key!
             # we can use it with a new passphrase if we don't want to use the PASSPHRASE defined in the Constants.py
             # * the value in the Constants.py can be changed if we don't want to put a passphrase as a parameter!
-            # session_key = ExchangeDHCli.exchangeDHCli(tcpSocket, "SHARED_PASS", "SERVER_NAME") # with a new passphrase!
+            # session_key = ExchangeDHCli.exchangeDHCli(tcpSocket, "HELLOWORLD") # with a new passphrase!
             # this is what is needed to derive a key!
             session_key = ExchangeDHServ.exchangeDHServ(connectedClientSocket)
 
